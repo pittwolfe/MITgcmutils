@@ -3,6 +3,7 @@ import re
 import glob
 import numpy as np
 from operator import mul
+from functools import reduce
 
 debug = False
 
@@ -12,7 +13,7 @@ debug = False
 # for python2.5
 try: next
 except NameError:
-    def next ( obj ): return obj.next()
+    def next ( obj ): return obj.__next__()
 
 _currentline = ''
 
@@ -349,7 +350,7 @@ def rdmds(fnamearg,itrs=-1,machineformat='b',rec=None,fill_value=0,
                 nrecords, = meta['nrecords']
                 tileshape = (nrecords,) + recshape
                 if allrec:
-                    reclist = range(nrecords)
+                    reclist = list(range(nrecords))
                     recinds = np.s_[:,] + levinds
                 else:
                     recinds = np.ix_(reclist, *levs)
@@ -470,7 +471,7 @@ def rdmds(fnamearg,itrs=-1,machineformat='b',rec=None,fill_value=0,
         arr = arr.reshape(squeezed+arr.shape[2+nlev:])
 
     if returnmeta:
-        meta = dict((k.lower(),v) for k,v in metaref.items())
+        meta = dict((k.lower(),v) for k,v in list(metaref.items()))
         return arr,itrs,meta
 #    elif returnits:
 #        return arr,itrs
