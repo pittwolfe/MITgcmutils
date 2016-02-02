@@ -1,7 +1,7 @@
 import sys
 import glob
 import numpy as np
-from netcdf import netcdf_file
+from .netcdf import netcdf_file
 
 _exclude_global = ['close',
                    'createDimension',
@@ -85,7 +85,7 @@ class MNC:
         self._attributes['bi'] = 1
         self._attributes['bj'] = 1
         haveexch2 = False
-        for k in self._attributes.keys():
+        for k in list(self._attributes.keys()):
             if k.startswith('exch2_'):
                 del self._attributes[k]
                 haveexch2 = True
@@ -176,7 +176,7 @@ class MNC:
 
         # dimensions
         self.dimensions = {}
-        for k,n in self.nc[0].dimensions.items():
+        for k,n in list(self.nc[0].dimensions.items()):
             # compute size of dimension in global array for X* and Y*
             if k[0] == 'X':
                 n += self._nx - sNx
@@ -201,7 +201,7 @@ class MNC:
             raise AttributeError("'MNC' object has no attribute '" + k + "'")
 
     def __dir__(self):
-        return self.__dict__.keys() + self._attributes.keys()
+        return list(self.__dict__.keys()) + list(self._attributes.keys())
 
     def close(self):
         """Close tile files"""
@@ -288,7 +288,7 @@ class MNCVariable:
             raise AttributeError("'MNCVariable' object has no attribute '" + k + "'")
 
     def __dir__(self):
-        return self.__dict__.keys() + self._attributes.keys()
+        return list(self.__dict__.keys()) + list(self._attributes.keys())
 
     def __getitem__(self, ind):
         if self.layout == 'faces':
@@ -400,7 +400,7 @@ def rdmnc(fpatt, varnames=None, iters=None, slices=Ellipsis, layout=None):
     '''
     mnc = MNC(fpatt, layout)
     if varnames is None:
-        varnames = mnc.variables.keys()
+        varnames = list(mnc.variables.keys())
     elif isinstance(varnames, str):
         varnames = [varnames]
 

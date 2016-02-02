@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-u"""
+"""
 NetCDF reader/writer module.
 
 This module is used to read and create NetCDF files. NetCDF files are
@@ -92,6 +92,7 @@ __all__ = ['netcdf_file']
 
 
 from operator import mul
+from functools import reduce
 try:
     from collections import OrderedDict
 except ImportError:
@@ -275,7 +276,7 @@ class netcdf_file(object):
     def close(self):
         """Closes the NetCDF file."""
         # first close mmaps
-        for var in self.variables.values():
+        for var in list(self.variables.values()):
             base = var.data
             while hasattr(base, 'base'):
                 base = base.base
@@ -401,8 +402,8 @@ class netcdf_file(object):
             self._pack_int(len(self.variables))
 
             # Separate record variables from non-record ones, keep order
-            nonrec_vars = [ k for k,v in self.variables.items() if not v.isrec ]
-            rec_vars = [ k for k,v in self.variables.items() if v.isrec ]
+            nonrec_vars = [ k for k,v in list(self.variables.items()) if not v.isrec ]
+            rec_vars = [ k for k,v in list(self.variables.items()) if v.isrec ]
 
             # Set the metadata for all variables.
             for name in nonrec_vars + rec_vars:
@@ -462,7 +463,7 @@ class netcdf_file(object):
                 vsize = size * var.data.itemsize
             else:
                 vsize = 0
-            rec_vars = len([var for var in self.variables.values()
+            rec_vars = len([var for var in list(self.variables.values())
                     if var.isrec])
             if rec_vars > 1:
                 vsize += -vsize % 4
@@ -483,7 +484,7 @@ class netcdf_file(object):
 
     @property
     def begins(self):
-        return [(name,pos,self.variables[name].isrec) for name,pos in self._begins.items()]
+        return [(name,pos,self.variables[name].isrec) for name,pos in list(self._begins.items())]
 
     def write_var(self, name, val):
         if not self.delay:
@@ -526,7 +527,7 @@ class netcdf_file(object):
 
     def _write_numrecs(self):
         # Get highest record count from all record variables.
-        for var in self.variables.values():
+        for var in list(self.variables.values()):
             if var.isrec and len(var.data) > self._recs:
                 self.__dict__['_recs'] = len(var.data)
         self.__dict__['_numrecs_begin'] = self.fp.tell()
@@ -555,7 +556,7 @@ class netcdf_file(object):
         if attributes:
             self.fp.write(NC_ATTRIBUTE)
             self._pack_int(len(attributes))
-            for name, values in attributes.items():
+            for name, values in list(attributes.items()):
                 self._pack_string(name)
                 self._write_values(values)
         else:
@@ -572,8 +573,8 @@ class netcdf_file(object):
 #            deco.sort()
 #            variables = [ k for (unused, k) in deco ][::-1]
             # Separate record variables from non-record ones, keep order
-            nonrec_vars = [ k for k,v in self.variables.items() if not v.isrec ]
-            rec_vars = [ k for k,v in self.variables.items() if v.isrec ]
+            nonrec_vars = [ k for k,v in list(self.variables.items()) if not v.isrec ]
+            rec_vars = [ k for k,v in list(self.variables.items()) if v.isrec ]
             variables = nonrec_vars + rec_vars
 
             # Set the metadata for all variables.
@@ -582,7 +583,7 @@ class netcdf_file(object):
             # Now that we have the metadata, we know the vsize of
             # each record variable, so we can calculate recsize.
             self.__dict__['_recsize'] = sum([
-                    var._vsize for var in self.variables.values()
+                    var._vsize for var in list(self.variables.values())
                     if var.isrec])
             # Set the data for all variables.
             for name in variables:
@@ -612,7 +613,7 @@ class netcdf_file(object):
                 vsize = var.data[0].size * var.data.itemsize
             except IndexError:
                 vsize = 0
-            rec_vars = len([var for var in self.variables.values()
+            rec_vars = len([var for var in list(self.variables.values())
                     if var.isrec])
             if rec_vars > 1:
                 vsize += -vsize % 4
@@ -665,16 +666,16 @@ class netcdf_file(object):
         else:
             types = [
                     (int, NC_INT),
-                    (long, NC_INT),
+                    (int, NC_INT),
                     (float, NC_FLOAT),
-                    (basestring, NC_CHAR),
+                    (str, NC_CHAR),
                     ]
             try:
                 sample = values[0]
             except (IndexError, TypeError):
                 sample = values
-            if isinstance(sample, unicode):
-                if not isinstance(values, unicode):
+            if isinstance(sample, str):
+                if not isinstance(values, str):
                     raise ValueError("NetCDF requires that text be encoded as UTF-8")
                 values = values.encode('utf-8')
             for class_, nc_type in types:
@@ -727,7 +728,7 @@ class netcdf_file(object):
             self._dims.append(name)  # preserve order
 
     def _read_gatt_array(self):
-        for k, v in self._read_att_array().items():
+        for k, v in list(self._read_att_array().items()):
             self.__setattr__(k, v)
 
     def _read_att_array(self):
@@ -998,7 +999,7 @@ class netcdf_variable(object):
         self.copy = copy
 
         self._attributes = attributes or OrderedDict()
-        for k, v in self._attributes.items():
+        for k, v in list(self._attributes.items()):
             self.__dict__[k] = v
 
     def __setattr__(self, attr, value):
